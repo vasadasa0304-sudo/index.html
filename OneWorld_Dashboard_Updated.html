@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneWorld Status Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1F4E78 0%, #2d5f8d 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-style: italic;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 25px 30px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #404040;
+            font-size: 1.1em;
+        }
+        
+        select {
+            padding: 12px 20px;
+            font-size: 1em;
+            border: 2px solid #4472C4;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            min-width: 250px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        select:hover {
+            border-color: #1F4E78;
+            box-shadow: 0 2px 8px rgba(31, 78, 120, 0.2);
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #1F4E78;
+            box-shadow: 0 0 0 3px rgba(31, 78, 120, 0.1);
+        }
+        
+        .last-updated {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 35px;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #4472C4 0%, #5b8dd6 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(68, 114, 196, 0.3);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4472C4;
+            transition: all 0.3s;
+        }
+        
+        .info-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #404040;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            color: #333;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+        
+        .tiers-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .tier-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
+        
+        .tier-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .tier-header {
+            padding: 20px;
+            color: white;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tier-ruby .tier-header {
+            background: linear-gradient(135deg, #E74C3C 0%, #c0392b 100%);
+        }
+        
+        .tier-sapphire .tier-header {
+            background: linear-gradient(135deg, #3498DB 0%, #2980b9 100%);
+        }
+        
+        .tier-emerald .tier-header {
+            background: linear-gradient(135deg, #27AE60 0%, #229954 100%);
+        }
+        
+        .tier-body {
+            padding: 25px;
+            background: white;
+        }
+        
+        .tier-item {
+            margin-bottom: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .tier-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .tier-item-label {
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+        
+        .tier-item-value {
+            color: #333;
+            line-height: 1.5;
+            font-size: 1.05em;
+        }
+        
+        .charts-section {
+            margin-top: 40px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #1F4E78;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .accelerator-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .accelerator-section .section-header {
+            background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+            color: #000;
+            margin-bottom: 15px;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tiers-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 ONEWORLD ALLIANCE STATUS DASHBOARD</h1>
+            <p>Complete Analysis Tool - Interactive Status Tier Comparison</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="airlineSelect">SELECT AIRLINE:</label>
+                <select id="airlineSelect" onchange="updateDashboard()">
+                </select>
+            </div>
+            <div class="last-updated">
+                Last Updated: October 22, 2025
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Airline Information Section -->
+            <div class="section">
+                <div class="section-header">✈️ AIRLINE PROGRAM INFORMATION</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Program Name</div>
+                        <div class="info-value" id="programName">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Mileage Accrual</div>
+                        <div class="info-value" id="mileageAccrual">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Can I buy award BA (avios) flight</div>
+                        <div class="info-value" id="aviosFlights">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Additional Notes</div>
+                        <div class="info-value" id="notes">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tier Comparison Section -->
+            <div class="section">
+                <div class="section-header">💎 STATUS TIER COMPARISON</div>
+                <div class="tiers-container">
+                    <!-- Ruby Tier -->
+                    <div class="tier-card tier-ruby">
+                        <div class="tier-header">Ruby</div>
+                        <div class="tier-body">
+                            <div class="tier-item">
+                                <div class="tier-item-label">Tier Name</div>
+                                <div class="tier-item-value" id="rubyTier">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Requirements</div>
+                                <div class="tier-item-value" id="rubyReq">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Estimated Cost</div>
+                                <div class="tier-item-value" id="rubyCost">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Flight Requirements</div>
+                                <div class="tier-item-value" id="rubyFlight">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sapphire Tier -->
+                    <div class="tier-card tier-sapphire">
+                        <div class="tier-header">Sapphire</div>
+                        <div class="tier-body">
+                            <div class="tier-item">
+                                <div class="tier-item-label">Tier Name</div>
+                                <div class="tier-item-value" id="sapphireTier">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Requirements</div>
+                                <div class="tier-item-value" id="sapphireReq">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Estimated Cost</div>
+                                <div class="tier-item-value" id="sapphireCost">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Flight Requirements</div>
+                                <div class="tier-item-value" id="sapphireFlight">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Emerald Tier -->
+                    <div class="tier-card tier-emerald">
+                        <div class="tier-header">Emerald</div>
+                        <div class="tier-body">
+                            <div class="tier-item">
+                                <div class="tier-item-label">Tier Name</div>
+                                <div class="tier-item-value" id="emeraldTier">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Requirements</div>
+                                <div class="tier-item-value" id="emeraldReq">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Estimated Cost</div>
+                                <div class="tier-item-value" id="emeraldCost">-</div>
+                            </div>
+                            <div class="tier-item">
+                                <div class="tier-item-label">Flight Requirements</div>
+                                <div class="tier-item-value" id="emeraldFlight">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Accelerator Section -->
+            <div class="accelerator-section">
+                <div class="section-header">⚡ STATUS ACCELERATOR PROGRAM</div>
+                <div class="info-value" id="accelerator">-</div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="section-header">📊 INTERACTIVE COST ANALYSIS</div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title" id="chart1Title">Selected Airline: Cost by Status Tier</div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">All Airlines: Cost Comparison</div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p><strong>Data Source:</strong> OneWorld Ruby, Sapphire, and Emerald Analysis Tabs</p>
+            <p>All information updates automatically based on airline selection</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Airlines data
+        const airlinesData = {
+        "British Airways": {
+                "program_name": "Executive Club",
+                "mileage_accrual": "Avios",
+                "avios_flights": "Yes, high carrier surcharges",
+                "notes": "($1.33)£1 = 1 Tier Point. 25 flights must be BA-coded.",
+                "ruby": {
+                        "tier_name": "Bronze",
+                        "requirements": "3,500 Tier Points OR 25 BA-coded flights",
+                        "cost": "$4000-5,000",
+                        "flight_req": "25 flights minimum (BA-coded)"
+                },
+                "sapphire": {
+                        "tier_name": "Silver",
+                        "requirements": "7,500 Tier Points OR 50 BA-coded flights",
+                        "cost": "$8,500-10,000",
+                        "flight_req": "50 flights minimum (BA-coded)"
+                },
+                "emerald": {
+                        "tier_name": "Gold",
+                        "requirements": "20,000 Tier Points",
+                        "cost": "$24,000-26,700",
+                        "flight_req": "No flight alternative"
+                },
+                "accelerator": "BA Premium Plus card: Bonus TP on spend"
+        },
+        "Alaska Airlines": {
+                "program_name": "Mileage Plan",
+                "mileage_accrual": "Bonus points",
+                "avios_flights": "Yes, online through Alaska Airlines ",
+                "notes": "Distance-based. No minimum spend. Can earn EQM from partners",
+                "ruby": {
+                        "tier_name": "Silver",
+                        "requirements": "20,000 elite-qualifying miles",
+                        "cost": "$1800-3500",
+                        "flight_req": "No flight requirement"
+                },
+                "sapphire": {
+                        "tier_name": "MVP Gold",
+                        "requirements": "40,000 elite-qualifying miles",
+                        "cost": "$4,000-6,000",
+                        "flight_req": "No flight requirement"
+                },
+                "emerald": {
+                        "tier_name": "MVP Gold 75K",
+                        "requirements": "75,000 elite-qualifying miles",
+                        "cost": "$7,000-12,000",
+                        "flight_req": "No flight requirement"
+                },
+                "accelerator": "ASCENT VISA SIGNATURE 1 status point per $3 spent, capped at 30,000 points, SUMMIT VISA INFINITE 1 status point per $2 spent, uncapped"
+        },
+        "American Airlines": {
+                "program_name": "AAdvantage",
+                "mileage_accrual": "Advantage miles",
+                "avios_flights": "Yes, high carrier surcharges",
+                "notes": "Loyalty Points earned from flights & credit cards",
+                "ruby": {
+                        "tier_name": "Gold",
+                        "requirements": "40,000 Loyalty Points",
+                        "cost": "$8,000",
+                        "flight_req": "No flight requirement"
+                },
+                "sapphire": {
+                        "tier_name": "Platinum",
+                        "requirements": "75,000 Loyalty Points",
+                        "cost": "$12,500",
+                        "flight_req": "No flight requirement"
+                },
+                "emerald": {
+                        "tier_name": "Platinum Pro",
+                        "requirements": "125,000 Loyalty Points",
+                        "cost": "$17,000",
+                        "flight_req": "No flight requirement"
+                },
+                "accelerator": "Credit cards earn bonus LP"
+        },
+        "Qatar Airways": {
+                "program_name": "Privilege Club",
+                "mileage_accrual": "Avios",
+                "avios_flights": "Yes, online through Qatar Airways, you can also connect with BA account and transfer Avios there and use them from BA account",
+                "notes": "Card: $499/yr, instant Gold Y1, then need 300 Qpoints. US only",
+                "ruby": {
+                        "tier_name": "Silver",
+                        "requirements": "150 Qpoints",
+                        "cost": "$4,250",
+                        "flight_req": "No flight requirement"
+                },
+                "sapphire": {
+                        "tier_name": "Gold",
+                        "requirements": "300 Qpoints",
+                        "cost": "$8,500",
+                        "flight_req": "No flight requirement"
+                },
+                "emerald": {
+                        "tier_name": "Platinum",
+                        "requirements": "600 Qpoints",
+                        "cost": "$17,000",
+                        "flight_req": "No flight requirement"
+                },
+                "accelerator": "Buy Q points: $25 per point, max 50% of status requirements. Visa Infinite credit card (US citizen): Instant Gold Year 1"
+        },
+        "Royal Air Maroc": {
+                "program_name": "Safar Flyer",
+                "mileage_accrual": "Award miles",
+                "avios_flights": "Yes, call center/email",
+                "notes": "Must have min 10,000 miles on AT metal. 12-month calendar",
+                "ruby": {
+                        "tier_name": "Silver",
+                        "requirements": "20,000 Status Miles OR 15 flights on AT",
+                        "cost": "$2,000-4,000",
+                        "flight_req": "15 flights minimum (AT-coded)"
+                },
+                "sapphire": {
+                        "tier_name": "Gold",
+                        "requirements": "35,000 Status Miles OR 30 flights on AT",
+                        "cost": "$4,000-7,000",
+                        "flight_req": "30 flights minimum (AT-coded)"
+                },
+                "emerald": {
+                        "tier_name": "Platinum",
+                        "requirements": "75,000 Status Miles OR 75 flights on AT",
+                        "cost": "$8,500-20,000",
+                        "flight_req": "75 flights minimum (AT-coded)"
+                },
+                "accelerator": "have 2x and 3x paid accelerators"
+        },
+        "Royal Jordanian": {
+                "program_name": "Royal Club",
+                "mileage_accrual": "Award miles",
+                "avios_flights": "Yes",
+                "notes": "Rolling 12-month window. Can buy status",
+                "ruby": {
+                        "tier_name": "Silver JAY",
+                        "requirements": "12,000 Tier Miles + 12 segments",
+                        "cost": "$2,500-4,000",
+                        "flight_req": "12 segments minimum"
+                },
+                "sapphire": {
+                        "tier_name": "Gold SPARROW",
+                        "requirements": "30,000 Tier Miles OR 60 segments",
+                        "cost": "$5,000-8,000",
+                        "flight_req": "60 segments minimum"
+                },
+                "emerald": {
+                        "tier_name": "Platinum HAWK",
+                        "requirements": "65,000 Tier Miles",
+                        "cost": "$15,000-25,000",
+                        "flight_req": "46 segments"
+                },
+                "accelerator": "Tier miles can be bought SPECULATIVE PRICE 0.07$, Credit cards earn miles"
+        },
+        "Finnair": {
+                "program_name": "Finnair Plus",
+                "mileage_accrual": "Avios",
+                "avios_flights": "Yes, you can also connect with the BA club and transfer Avios there and use them from the BA account",
+                "notes": "Calendar year. ",
+                "ruby": {
+                        "tier_name": "Silver",
+                        "requirements": "15,000 Tier Points",
+                        "cost": "$2900",
+                        "flight_req": "No flight requirement"
+                },
+                "sapphire": {
+                        "tier_name": "Gold",
+                        "requirements": "45,000 Tier Points",
+                        "cost": "$7450",
+                        "flight_req": "No flight requirement"
+                },
+                "emerald": {
+                        "tier_name": "Platinum",
+                        "requirements": "80,000 Tier Points",
+                        "cost": "$11,600",
+                        "flight_req": "No flight requirement"
+                },
+                "accelerator": "Exchange 3 avios = 1 tier point in shop, once per calendar year, limits apply"
+        },
+        "Iberia": {
+                "program_name": "Iberia Plus",
+                "mileage_accrual": "Avios",
+                "avios_flights": "Yes, you can also connect with the BA club and transfer Avios there and use them from the BA account",
+                "notes": null,
+                "ruby": {
+                        "tier_name": "Plata",
+                        "requirements": "3,500 Elite Points OR 20 IB-coded flights",
+                        "cost": "$3,200-3,500",
+                        "flight_req": "20 flights minimum (IB-coded)"
+                },
+                "sapphire": {
+                        "tier_name": "Oro",
+                        "requirements": "7,500 Elite Points OR 40 IB-coded flights",
+                        "cost": "$7,500-8,300",
+                        "flight_req": "40 flights minimum (IB-coded)"
+                },
+                "emerald": {
+                        "tier_name": "Platino",
+                        "requirements": "20,000 Elite Points OR 90 IB-coded flights",
+                        "cost": "$20,000-23,000",
+                        "flight_req": "90 flights minimum (IB-coded)"
+                },
+                "accelerator": "1 Elite Point for every 10 Avios collected through our extensive network of partner brands. limited to 30% of the Elite Points you need to reach or renew each Iberia Club tier."
+        },
+        "Malaysia Airlines": {
+                "program_name": "Enrich",
+                "mileage_accrual": "Enrich points",
+                "avios_flights": "No",
+                "notes": "flying in higher economy long haul is the cheapest and faster way",
+                "ruby": {
+                        "tier_name": "Silver",
+                        "requirements": "30 Elite Points",
+                        "cost": "$1800-2,000",
+                        "flight_req": "No flight requirement"
+                },
+                "sapphire": {
+                        "tier_name": "Gold",
+                        "requirements": "60 Elite Points",
+                        "cost": "$4500-5000",
+                        "flight_req": "No flight requirement"
+                },
+                "emerald": {
+                        "tier_name": "Platinum",
+                        "requirements": "100 elite points",
+                        "cost": "$9500",
+                        "flight_req": "No flight requirement"
+                },
+                "accelerator": "Visa infinite 30% reduction for tier status requirements, requires: A Malaysian NRIC or valid long-term residence permit, A Malaysian address"
+        }
+};
+        
+        // Chart data - FIXED: Using MINIMUM values from cost ranges
+        const chartData = {
+        "airlines": [
+                "British Airways",
+                "Alaska Airlines",
+                "American Airlines",
+                "Qatar Airways",
+                "Royal Air Maroc",
+                "Royal Jordanian",
+                "Finnair",
+                "Iberia",
+                "Malaysia Airlines"
+        ],
+        "ruby_costs": [
+                4000,    // British Airways minimum
+                1800,    // Alaska Airlines minimum
+                8000,    // American Airlines - UPDATED
+                4250,    // Qatar Airways - UPDATED (Silver, buy Q points)
+                2000,    // Royal Air Maroc minimum
+                2500,    // Royal Jordanian minimum
+                2900,    // Finnair (single value)
+                3200,    // Iberia minimum
+                1800     // Malaysia Airlines minimum
+        ],
+        "sapphire_costs": [
+                8500,    // British Airways minimum
+                4000,    // Alaska Airlines minimum
+                12500,   // American Airlines - UPDATED
+                8500,    // Qatar Airways - UPDATED (Gold, buy Q points)
+                4000,    // Royal Air Maroc minimum
+                5000,    // Royal Jordanian minimum
+                7450,    // Finnair (single value)
+                7500,    // Iberia minimum
+                4500     // Malaysia Airlines minimum
+        ],
+        "emerald_costs": [
+                24000,   // British Airways minimum
+                7000,    // Alaska Airlines minimum
+                17000,   // American Airlines - UPDATED
+                17000,   // Qatar Airways - UPDATED (Platinum, buy Q points)
+                8500,    // Royal Air Maroc minimum
+                15000,   // Royal Jordanian minimum
+                11600,   // Finnair (single value)
+                20000,   // Iberia minimum
+                9500     // Malaysia Airlines (single value)
+        ]
+};
+        
+        let chart1, chart2;
+        
+        // CRITICAL FIX: This function had a bug - it was using regex that could fail
+        // OLD VERSION: const match = costStr.match(/\d+/);
+        // PROBLEM: This only matches the FIRST number, so "$4000-5,000" would extract 4000
+        // but "$1800-3500" would extract 1800. The comma in "5,000" caused issues
+        function extractCost(costStr) {
+            console.log('DEBUG extractCost - Input:', costStr);
+            
+            // Handle null or undefined
+            if (!costStr || costStr === 'N/A') {
+                console.log('DEBUG extractCost - Returning 0 for N/A or null');
+                return 0;
+            }
+            
+            // FIX: Remove all commas first, then extract all numbers
+            const cleanStr = costStr.replace(/,/g, '');
+            console.log('DEBUG extractCost - After removing commas:', cleanStr);
+            
+            // Extract all numbers from the string
+            const numbers = cleanStr.match(/\d+/g);
+            console.log('DEBUG extractCost - All numbers found:', numbers);
+            
+            if (!numbers || numbers.length === 0) {
+                console.log('DEBUG extractCost - No numbers found, returning 0');
+                return 0;
+            }
+            
+            // Convert first number to integer (this is the minimum in a range)
+            const result = parseInt(numbers[0]);
+            console.log('DEBUG extractCost - Returning:', result);
+            return result;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== PAGE LOADED - Starting initialization ===');
+            
+            // Step 1: Populate dropdown with all airlines
+            const select = document.getElementById('airlineSelect');
+            Object.keys(airlinesData).forEach(airline => {
+                const option = document.createElement('option');
+                option.value = airline;
+                option.textContent = airline;
+                select.appendChild(option);
+            });
+            console.log('✓ Dropdown populated with', Object.keys(airlinesData).length, 'airlines');
+            
+            // Step 2: Set default airline to Alaska Airlines
+            select.value = 'Alaska Airlines';
+            console.log('✓ Default airline set to:', select.value);
+            
+            // Step 3: Initialize both charts (they start empty)
+            console.log('Calling initCharts()...');
+            initCharts();
+            
+            // Step 4: Wait for charts to be fully initialized, then update with data
+            // CRITICAL FIX: Added longer timeout to ensure Chart.js is fully ready
+            setTimeout(() => {
+                console.log('Timeout completed, calling updateDashboard()...');
+                updateDashboard();
+            }, 250); // Increased from 100ms to 250ms for reliability
+        });
+        
+        function initCharts() {
+            console.log('=== INITIALIZING CHARTS ===');
+            
+            // CHART 1: Single airline bar chart
+            const ctx1 = document.getElementById('chart1').getContext('2d');
+            if (!ctx1) {
+                console.error('ERROR: Could not get context for chart1 canvas!');
+                return;
+            }
+            console.log('✓ Chart 1 canvas context obtained');
+            
+            chart1 = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Ruby', 'Sapphire', 'Emerald'],
+                    datasets: [{
+                        label: 'Minimum Cost (USD)',
+                        data: [0, 0, 0], // Starts empty, will be filled by updateChart1()
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.85)',
+                            'rgba(52, 152, 219, 0.85)',
+                            'rgba(39, 174, 96, 0.85)'
+                        ],
+                        borderColor: [
+                            'rgb(231, 76, 60)',
+                            'rgb(52, 152, 219)',
+                            'rgb(39, 174, 96)'
+                        ],
+                        borderWidth: 3,
+                        borderRadius: 8,
+                        barThickness: 80
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Min Cost: $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                },
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.08)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            console.log('✓ Chart 1 initialized successfully');
+            
+            // CHART 2: All airlines comparison
+            const ctx2 = document.getElementById('chart2').getContext('2d');
+            if (!ctx2) {
+                console.error('ERROR: Could not get context for chart2 canvas!');
+                return;
+            }
+            console.log('✓ Chart 2 canvas context obtained');
+            
+            chart2 = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: chartData.airlines,
+                    datasets: [
+                        {
+                            label: 'Ruby',
+                            data: chartData.ruby_costs,
+                            backgroundColor: 'rgba(231, 76, 60, 0.85)',
+                            borderColor: 'rgb(231, 76, 60)',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Sapphire',
+                            data: chartData.sapphire_costs,
+                            backgroundColor: 'rgba(52, 152, 219, 0.85)',
+                            borderColor: 'rgb(52, 152, 219)',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Emerald',
+                            data: chartData.emerald_costs,
+                            backgroundColor: 'rgba(39, 174, 96, 0.85)',
+                            borderColor: 'rgb(39, 174, 96)',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                },
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.08)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('✓ Chart 2 initialized successfully');
+            console.log('=== CHARTS INITIALIZATION COMPLETE ===');
+        }
+        
+        function updateDashboard() {
+            const airline = document.getElementById('airlineSelect').value;
+            console.log('=== UPDATING DASHBOARD FOR:', airline, '===');
+            
+            const data = airlinesData[airline];
+            if (!data) {
+                console.error('ERROR: No data found for airline:', airline);
+                return;
+            }
+            
+            // Update airline information section
+            document.getElementById('programName').textContent = 
+                airline === 'Alaska Airlines' ? 'Atmos Rewards' : data.program_name;
+            document.getElementById('mileageAccrual').textContent = data.mileage_accrual || 'N/A';
+            document.getElementById('aviosFlights').textContent = data.avios_flights || 'N/A';
+            document.getElementById('notes').textContent = data.notes || 'N/A';
+            console.log('✓ Airline info section updated');
+            
+            // Update Ruby tier
+            document.getElementById('rubyTier').textContent = 
+                airline === 'Alaska Airlines' ? 'Silver (OneWorld Ruby)' : data.ruby.tier_name;
+            document.getElementById('rubyReq').textContent = data.ruby.requirements || 'N/A';
+            document.getElementById('rubyCost').textContent = data.ruby.cost || 'N/A';
+            document.getElementById('rubyFlight').textContent = data.ruby.flight_req || 'N/A';
+            console.log('✓ Ruby tier updated');
+            
+            // Update Sapphire tier
+            document.getElementById('sapphireTier').textContent = 
+                airline === 'Alaska Airlines' ? 'MVP Gold (OneWorld Sapphire)' : data.sapphire.tier_name;
+            document.getElementById('sapphireReq').textContent = data.sapphire.requirements || 'N/A';
+            document.getElementById('sapphireCost').textContent = data.sapphire.cost || 'N/A';
+            document.getElementById('sapphireFlight').textContent = data.sapphire.flight_req || 'N/A';
+            console.log('✓ Sapphire tier updated');
+            
+            // Update Emerald tier
+            document.getElementById('emeraldTier').textContent = 
+                airline === 'Alaska Airlines' ? 'MVP Gold 75K (OneWorld Emerald)' : data.emerald.tier_name;
+            document.getElementById('emeraldReq').textContent = data.emerald.requirements || 'N/A';
+            document.getElementById('emeraldCost').textContent = data.emerald.cost || 'N/A';
+            document.getElementById('emeraldFlight').textContent = data.emerald.flight_req || 'N/A';
+            console.log('✓ Emerald tier updated');
+            
+            // Update accelerator
+            document.getElementById('accelerator').textContent = data.accelerator || 'None available';
+            console.log('✓ Accelerator section updated');
+            
+            // Update Chart 1 with new data
+            console.log('Calling updateChart1()...');
+            updateChart1(airline);
+            
+            console.log('=== DASHBOARD UPDATE COMPLETE ===');
+        }
+        
+        function updateChart1(airline) {
+            console.log('=== UPDATING CHART 1 FOR:', airline, '===');
+            
+            // CRITICAL CHECK: Make sure chart1 exists
+            if (!chart1) {
+                console.error('ERROR: Chart 1 is not initialized! Cannot update.');
+                return;
+            }
+            console.log('✓ Chart 1 exists');
+            
+            const data = airlinesData[airline];
+            if (!data) {
+                console.error('ERROR: No data found for airline:', airline);
+                return;
+            }
+            
+            // Extract costs using the fixed extractCost function
+            console.log('Extracting costs...');
+            console.log('  Ruby cost string:', data.ruby.cost);
+            const rubyCost = extractCost(data.ruby.cost);
+            
+            console.log('  Sapphire cost string:', data.sapphire.cost);
+            const sapphireCost = extractCost(data.sapphire.cost);
+            
+            console.log('  Emerald cost string:', data.emerald.cost);
+            const emeraldCost = extractCost(data.emerald.cost);
+            
+            console.log('✓ Extracted costs:', {
+                ruby: rubyCost,
+                sapphire: sapphireCost,
+                emerald: emeraldCost
+            });
+            
+            // Update chart title
+            document.getElementById('chart1Title').textContent = airline + ': Cost by Status Tier';
+            console.log('✓ Chart title updated');
+            
+            // Update the chart data array
+            chart1.data.datasets[0].data = [rubyCost, sapphireCost, emeraldCost];
+            console.log('✓ Chart data array updated to:', chart1.data.datasets[0].data);
+            
+            // Force chart update with animation
+            chart1.update('active');
+            console.log('✓ Chart update() called');
+            
+            console.log('=== CHART 1 UPDATE COMPLETE ===');
+        }
+    </script>
+</body>
+</html>
