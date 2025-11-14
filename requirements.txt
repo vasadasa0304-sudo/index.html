@@ -1,0 +1,16 @@
+# Web Scraping Dependencies
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Data Processing
+pandas==2.1.4
+
+# Google Sheets Integration
+gspread==5.12.3
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+
+# Utilities
+python-dotenv==1.0.0
